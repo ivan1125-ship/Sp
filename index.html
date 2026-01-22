@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-
-<!-- ✅ REQUIRED FOR MOBILE -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Read Aloud Checker</title>
 
 <style>
@@ -25,10 +22,7 @@ body {
   box-shadow: 0 12px 30px rgba(0,0,0,0.12);
 }
 
-h2 {
-  text-align: center;
-  font-size: clamp(20px, 5vw, 26px);
-}
+h2 { text-align: center; }
 
 textarea {
   width: 100%;
@@ -41,10 +35,10 @@ textarea {
 }
 
 select {
-  padding: 8px;
-  border-radius: 6px;
   width: 100%;
+  padding: 8px;
   margin-top: 8px;
+  border-radius: 6px;
 }
 
 .buttons {
@@ -69,9 +63,7 @@ button {
 .stop  { background: #ef4444; color: white; }
 .reset { background: #9ca3af; color: white; }
 
-button:disabled {
-  opacity: 0.5;
-}
+button:disabled { opacity: 0.5; }
 
 .legend {
   margin-top: 12px;
@@ -80,7 +72,7 @@ button:disabled {
 }
 
 .legend span {
-  margin: 0 6px;
+  margin: 0 8px;
   font-weight: 600;
 }
 
@@ -122,6 +114,8 @@ span {
 .wrong-word {
   cursor: pointer;
   font-weight: bold;
+  color: #dc2626;
+  margin-right: 6px;
 }
 
 /* MODAL */
@@ -129,18 +123,17 @@ span {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
-  display: flex;
+  background: rgba(0,0,0,0.45);
   justify-content: center;
   align-items: center;
 }
 
 .modal-box {
   background: white;
-  padding: 20px;
-  border-radius: 12px;
+  padding: 25px;
+  border-radius: 14px;
   width: 90%;
-  max-width: 300px;
+  max-width: 320px;
   text-align: center;
 }
 </style>
@@ -166,7 +159,7 @@ span {
 
   <div class="legend">
     <span class="correct">🟢 Correct</span>
-    <span class="almost">🟡 Almost correct</span>
+    <span class="almost">🟡 Almost correct (phonetic)</span>
     <span class="wrong">🔴 Wrong</span>
   </div>
 
@@ -177,7 +170,7 @@ span {
   <div id="summary"></div>
 </div>
 
-<!-- MODAL -->
+<!-- PRONUNCIATION MODAL -->
 <div id="modal">
   <div class="modal-box">
     <h3 id="modalWord"></h3>
@@ -187,13 +180,13 @@ span {
 </div>
 
 <script>
-let words=[],index=0,recognition=null,isReading=false;
-let wrongWords=[],startTime=null,endTime=null,selectedWord="";
+let words=[], index=0, recognition=null, isReading=false;
+let wrongWords=[], startTime=null, endTime=null, selectedWord="";
 
-const startBtn=document.getElementById("startBtn");
-const stopBtn=document.getElementById("stopBtn");
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
 
-const normalize=w=>w.toLowerCase().replace(/[^a-z\u0900-\u097F]/g,"");
+const normalize = w => w.toLowerCase().replace(/[^a-z\u0900-\u097F]/g,"");
 
 function editDistance(a,b){
   const dp=[...Array(a.length+1)].map(()=>Array(b.length+1).fill(0));
@@ -209,83 +202,114 @@ function editDistance(a,b){
   return dp[a.length][b.length];
 }
 
-function phoneticScore(a,b){return editDistance(a,b)/b.length;}
+const phoneticScore = (a,b)=>editDistance(a,b)/b.length;
 
 function loadText(){
-  const input=inputText.value.trim();
-  if(!input)return alert("Paste text first");
-  words=input.replace(/[.,!?;:]/g,"").toLowerCase().split(/\s+/);
-  index=0;wrongWords=[];startTime=null;endTime=null;
+  const input = inputText.value.trim();
+  if(!input) return alert("Paste text first");
+  words = input.replace(/[.,!?;:]/g,"").toLowerCase().split(/\s+/);
+  index=0; wrongWords=[]; startTime=null; endTime=null;
   summary.style.display="none";
-  text.innerHTML=words.map((w,i)=>`<span ${i===0?'class="current"':''}>${w}</span>`).join(" ");
+  text.innerHTML = words.map((w,i)=>`<span ${i===0?'class="current"':''}>${w}</span>`).join(" ");
 }
 
 function startReading(){
-  if(isReading||!words.length)return;
-  recognition=new webkitSpeechRecognition();
-  recognition.lang=languageSelect.value;
-  recognition.continuous=true;
+  if(isReading || !words.length) return;
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = languageSelect.value;
+  recognition.continuous = true;
   startTime ??= Date.now();
-  isReading=true;startBtn.disabled=true;stopBtn.disabled=false;
-  recognition.onresult=e=>{
+  isReading=true; startBtn.disabled=true; stopBtn.disabled=false;
+
+  recognition.onresult = e=>{
     e.results[e.results.length-1][0].transcript
-      .toLowerCase().replace(/[.,!?]/g,"").split(/\s+/)
-      .forEach(processWord);
+      .toLowerCase().replace(/[.,!?]/g,"")
+      .split(/\s+/).forEach(processWord);
   };
   recognition.start();
 }
 
 function stopReading(){
-  if(!isReading)return;
+  if(!isReading) return;
   recognition.stop();
-  isReading=false;startBtn.disabled=false;stopBtn.disabled=true;
+  isReading=false; startBtn.disabled=false; stopBtn.disabled=true;
 }
 
 function processWord(spoken){
-  if(!spoken||spoken.length<2)return;
-  const spans=document.querySelectorAll("#text span");
-  let expected=normalize(words[index]);
-  spoken=normalize(spoken);
+  if(!spoken || spoken.length<2) return;
+  const spans = document.querySelectorAll("#text span");
+  let expected = normalize(words[index]);
+  spoken = normalize(spoken);
+
   spans[index].classList.remove("current");
   let cls="wrong";
-  if(spoken===expected)cls="correct";
-  else if(expected.length>=5&&spoken.length>=4&&phoneticScore(spoken,expected)<=0.3)cls="almost";
+
+  if(spoken===expected) cls="correct";
+  else if(expected.length>=5 && spoken.length>=4 && phoneticScore(spoken,expected)<=0.3)
+    cls="almost";
+
   spans[index].classList.add(cls);
-  if(cls==="wrong")wrongWords.push(expected);
+  if(cls==="wrong") wrongWords.push(expected);
+
   index++;
   if(index<spans.length){
     spans[index].classList.add("current");
-    spans[index].scrollIntoView({behavior:"smooth",block:"center"});
-  }else{
-    endTime=Date.now();stopReading();showSummary();
+    spans[index].scrollIntoView({behavior:"smooth", block:"center"});
+  } else {
+    endTime=Date.now(); stopReading(); showSummary();
   }
 }
 
 function showSummary(){
   const sec=Math.floor((endTime-startTime)/1000);
-  summary.innerHTML=`
+  summary.innerHTML = `
     <h3>📊 Summary</h3>
     <p>Time: ${Math.floor(sec/60)}m ${sec%60}s</p>
     <p>WPM: ${Math.round(words.length/sec*60)}</p>
-    <p><b>Mispronounced:</b><br>
-    ${[...new Set(wrongWords)].map(w=>`<span class="wrong-word" onclick="openModal('${w}')">${w}</span>`).join(" ")||"None 🎉"}
+    <p><b>Mispronounced Words:</b><br>
+    ${[...new Set(wrongWords)]
+      .map(w=>`<span class="wrong-word" onclick="openModal('${w}')">${w}</span>`)
+      .join(" ") || "None 🎉"}
     </p>`;
   summary.style.display="block";
 }
 
-function openModal(w){selectedWord=w;modalWord.innerText=w;modal.style.display="flex";}
-function closeModal(){modal.style.display="none";}
+/* MODAL LOGIC */
+function openModal(word){
+  selectedWord = word;
+  modalWord.innerText = word;
+  modal.style.display = "flex";
+  pronounceWord(); // auto-play
+}
+
+function closeModal(){
+  speechSynthesis.cancel();
+  modal.style.display = "none";
+}
+
 function pronounceWord(){
-  const u=new SpeechSynthesisUtterance(selectedWord);
-  u.lang=languageSelect.value;
+  const u = new SpeechSynthesisUtterance(selectedWord);
+  u.lang = languageSelect.value;
   speechSynthesis.speak(u);
 }
 
+/* Close modal on outside click */
+modal.addEventListener("click", e=>{
+  if(e.target.id==="modal") closeModal();
+});
+
+/* Close modal on ESC */
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape") closeModal();
+});
+
 function resetAll(){
   recognition?.stop();
-  text.innerHTML="";inputText.value="";
+  text.innerHTML="";
+  inputText.value="";
   summary.style.display="none";
-  index=0;wrongWords=[];startBtn.disabled=false;stopBtn.disabled=true;
+  index=0; wrongWords=[];
+  startBtn.disabled=false; stopBtn.disabled=true;
 }
 </script>
 
