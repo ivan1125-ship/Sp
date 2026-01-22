@@ -2,27 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<!-- ✅ REQUIRED FOR MOBILE -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Read Aloud Checker</title>
 
 <style>
 body {
   font-family: Arial, sans-serif;
   background: #f3f4f6;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  margin: 0;
+  padding: 10px;
 }
 
 .card {
   background: #ffffff;
-  width: 860px;
-  padding: 25px;
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
   border-radius: 14px;
   box-shadow: 0 12px 30px rgba(0,0,0,0.12);
 }
 
-h2 { text-align: center; }
+h2 {
+  text-align: center;
+  font-size: clamp(20px, 5vw, 26px);
+}
 
 textarea {
   width: 100%;
@@ -31,57 +37,31 @@ textarea {
   font-size: 16px;
   border-radius: 8px;
   border: 1px solid #ccc;
+  resize: none;
 }
 
 select {
   padding: 8px;
   border-radius: 6px;
-  margin-top: 10px;
+  width: 100%;
+  margin-top: 8px;
 }
-
-#text-container {
-  margin-top: 15px;
-  height: 220px;
-  overflow-y: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 15px;
-}
-
-#text {
-  font-size: 22px;
-  line-height: 1.9;
-}
-
-span {
-  padding: 4px 6px;
-  border-radius: 5px;
-  margin: 2px;
-  display: inline-block;
-}
-
-.current { background: #eef2ff; }
-.correct { color: #16a34a; }
-.almost  { color: #ca8a04; }
-.wrong   { color: #dc2626; }
 
 .buttons {
   margin-top: 15px;
-  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
 }
 
 button {
-  padding: 10px 18px;
-  margin: 6px;
+  flex: 1 1 140px;
+  padding: 12px;
   border: none;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .load { background: #10b981; color: white; }
@@ -89,24 +69,50 @@ button:disabled {
 .stop  { background: #ef4444; color: white; }
 .reset { background: #9ca3af; color: white; }
 
-/* LEGEND */
+button:disabled {
+  opacity: 0.5;
+}
+
 .legend {
-  margin-top: 10px;
+  margin-top: 12px;
   text-align: center;
   font-size: 14px;
 }
 
 .legend span {
-  margin: 0 10px;
+  margin: 0 6px;
   font-weight: 600;
 }
 
-.legend .correct { color: #16a34a; }
-.legend .almost  { color: #ca8a04; }
-.legend .wrong   { color: #dc2626; }
+.correct { color: #16a34a; }
+.almost  { color: #ca8a04; }
+.wrong   { color: #dc2626; }
+
+#text-container {
+  margin-top: 15px;
+  height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+#text {
+  font-size: clamp(18px, 4vw, 22px);
+  line-height: 1.8;
+}
+
+span {
+  padding: 3px 5px;
+  border-radius: 5px;
+  margin: 2px;
+  display: inline-block;
+}
+
+.current { background: #eef2ff; }
 
 #summary {
-  margin-top: 20px;
+  margin-top: 18px;
   padding: 15px;
   border-radius: 10px;
   background: #f9fafb;
@@ -114,10 +120,8 @@ button:disabled {
 }
 
 .wrong-word {
-  color: #dc2626;
   cursor: pointer;
   font-weight: bold;
-  margin-right: 6px;
 }
 
 /* MODAL */
@@ -126,15 +130,17 @@ button:disabled {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.4);
+  display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .modal-box {
   background: white;
-  padding: 25px;
+  padding: 20px;
   border-radius: 12px;
-  width: 300px;
+  width: 90%;
+  max-width: 300px;
   text-align: center;
 }
 </style>
@@ -146,22 +152,18 @@ button:disabled {
 
   <textarea id="inputText" placeholder="Paste English or Hindi text..."></textarea>
 
-  <div style="text-align:center; margin-top:10px;">
-    <label><strong>Language:</strong></label>
-    <select id="languageSelect">
-      <option value="en-US">English</option>
-      <option value="hi-IN">Hindi</option>
-    </select>
-  </div>
+  <select id="languageSelect">
+    <option value="en-US">English</option>
+    <option value="hi-IN">Hindi</option>
+  </select>
 
   <div class="buttons">
-    <button class="load" onclick="loadText()">Load Text</button>
-    <button id="startBtn" class="start" onclick="startReading()">Start Reading</button>
-    <button id="stopBtn" class="stop" onclick="stopReading()" disabled>Stop Reading</button>
+    <button class="load" onclick="loadText()">Load</button>
+    <button class="start" id="startBtn" onclick="startReading()">Start</button>
+    <button class="stop" id="stopBtn" onclick="stopReading()" disabled>Stop</button>
     <button class="reset" onclick="resetAll()">Reset</button>
   </div>
 
-  <!-- LEGEND -->
   <div class="legend">
     <span class="correct">🟢 Correct</span>
     <span class="almost">🟡 Almost correct</span>
@@ -185,208 +187,107 @@ button:disabled {
 </div>
 
 <script>
-let words = [];
-let index = 0;
-let recognition = null;
-let isReading = false;
+let words=[],index=0,recognition=null,isReading=false;
+let wrongWords=[],startTime=null,endTime=null,selectedWord="";
 
-let wrongWords = [];
-let correctCount = 0;
-let startTime = null;
-let endTime = null;
-let selectedWord = "";
+const startBtn=document.getElementById("startBtn");
+const stopBtn=document.getElementById("stopBtn");
 
-const startBtn = document.getElementById("startBtn");
-const stopBtn = document.getElementById("stopBtn");
+const normalize=w=>w.toLowerCase().replace(/[^a-z\u0900-\u097F]/g,"");
 
-/* HELPERS */
-function normalize(word) {
-  return word.toLowerCase().replace(/[^a-z\u0900-\u097F]/g, "");
-}
-
-function editDistance(a, b) {
-  const dp = Array.from({ length: a.length + 1 }, () =>
-    Array(b.length + 1).fill(0)
-  );
-  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+function editDistance(a,b){
+  const dp=[...Array(a.length+1)].map(()=>Array(b.length+1).fill(0));
+  for(let i=0;i<=a.length;i++)dp[i][0]=i;
+  for(let j=0;j<=b.length;j++)dp[0][j]=j;
+  for(let i=1;i<=a.length;i++)
+    for(let j=1;j<=b.length;j++)
+      dp[i][j]=Math.min(
+        dp[i-1][j]+1,
+        dp[i][j-1]+1,
+        dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1)
       );
-    }
-  }
   return dp[a.length][b.length];
 }
 
-function phoneticScore(spoken, expected) {
-  return editDistance(spoken, expected) / expected.length;
+function phoneticScore(a,b){return editDistance(a,b)/b.length;}
+
+function loadText(){
+  const input=inputText.value.trim();
+  if(!input)return alert("Paste text first");
+  words=input.replace(/[.,!?;:]/g,"").toLowerCase().split(/\s+/);
+  index=0;wrongWords=[];startTime=null;endTime=null;
+  summary.style.display="none";
+  text.innerHTML=words.map((w,i)=>`<span ${i===0?'class="current"':''}>${w}</span>`).join(" ");
 }
 
-/* LOAD */
-function loadText() {
-  const input = document.getElementById("inputText").value.trim();
-  if (!input) return alert("Paste text first.");
-
-  words = input.replace(/[.,!?;:]/g, "").toLowerCase().split(/\s+/);
-  index = 0;
-  wrongWords = [];
-  correctCount = 0;
-  startTime = null;
-  endTime = null;
-
-  document.getElementById("summary").style.display = "none";
-  renderText();
-}
-
-/* RENDER */
-function renderText() {
-  const textEl = document.getElementById("text");
-  textEl.innerHTML = "";
-
-  words.forEach((w, i) => {
-    const span = document.createElement("span");
-    span.innerText = w;
-    if (i === index) span.classList.add("current");
-    textEl.appendChild(span);
-  });
-}
-
-/* START */
-function startReading() {
-  if (isReading || !words.length) return;
-
-  recognition = new webkitSpeechRecognition();
-  recognition.lang = document.getElementById("languageSelect").value;
-  recognition.continuous = true;
-
-  if (!startTime) startTime = Date.now();
-  isReading = true;
-  startBtn.disabled = true;
-  stopBtn.disabled = false;
-
-  recognition.onresult = e => {
-    const spokenWords = e.results[e.results.length - 1][0].transcript
-      .toLowerCase()
-      .replace(/[.,!?]/g, "")
-      .split(/\s+/);
-
-    spokenWords.forEach(processWord);
+function startReading(){
+  if(isReading||!words.length)return;
+  recognition=new webkitSpeechRecognition();
+  recognition.lang=languageSelect.value;
+  recognition.continuous=true;
+  startTime ??= Date.now();
+  isReading=true;startBtn.disabled=true;stopBtn.disabled=false;
+  recognition.onresult=e=>{
+    e.results[e.results.length-1][0].transcript
+      .toLowerCase().replace(/[.,!?]/g,"").split(/\s+/)
+      .forEach(processWord);
   };
-
   recognition.start();
 }
 
-/* STOP */
-function stopReading() {
-  if (!isReading) return;
+function stopReading(){
+  if(!isReading)return;
   recognition.stop();
-  isReading = false;
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
+  isReading=false;startBtn.disabled=false;stopBtn.disabled=true;
 }
 
-/* PROCESS */
-function processWord(spoken) {
-  if (!spoken || spoken.length < 2) return;
-
-  const spans = document.querySelectorAll("#text span");
-  let expected = words[index];
-  if (!expected) return;
-
-  spoken = normalize(spoken);
-  expected = normalize(expected);
-
+function processWord(spoken){
+  if(!spoken||spoken.length<2)return;
+  const spans=document.querySelectorAll("#text span");
+  let expected=normalize(words[index]);
+  spoken=normalize(spoken);
   spans[index].classList.remove("current");
-
-  let status = "wrong";
-
-  if (spoken === expected) {
-    status = "correct";
-    correctCount++;
-  } else if (expected.length >= 5 && spoken.length >= 4) {
-    if (phoneticScore(spoken, expected) <= 0.3) {
-      status = "almost";
-    }
-  }
-
-  spans[index].classList.add(status);
-  if (status === "wrong") wrongWords.push(expected);
-
+  let cls="wrong";
+  if(spoken===expected)cls="correct";
+  else if(expected.length>=5&&spoken.length>=4&&phoneticScore(spoken,expected)<=0.3)cls="almost";
+  spans[index].classList.add(cls);
+  if(cls==="wrong")wrongWords.push(expected);
   index++;
-
-  if (index < spans.length) {
+  if(index<spans.length){
     spans[index].classList.add("current");
-    spans[index].scrollIntoView({ behavior: "smooth", block: "center" });
-  } else {
-    endTime = Date.now();
-    stopReading();
-    showSummary();
+    spans[index].scrollIntoView({behavior:"smooth",block:"center"});
+  }else{
+    endTime=Date.now();stopReading();showSummary();
   }
 }
 
-/* SUMMARY */
-function showSummary() {
-  const summary = document.getElementById("summary");
-  const uniqueWrong = [...new Set(wrongWords)];
-  const seconds = Math.floor((endTime - startTime) / 1000);
-  const wpm = Math.round((words.length / seconds) * 60);
-
-  summary.innerHTML = `
-    <h3>📊 Reading Summary</h3>
-    <p>Time: ${Math.floor(seconds/60)}m ${seconds%60}s</p>
-    <p>Speed: ${wpm} WPM</p>
-    <p><strong>Mispronounced Words:</strong></p>
-    ${uniqueWrong.map(w =>
-      `<span class="wrong-word" onclick="openModal('${w}')">${w}</span>`
-    ).join("") || "None 🎉"}
-  `;
-  summary.style.display = "block";
+function showSummary(){
+  const sec=Math.floor((endTime-startTime)/1000);
+  summary.innerHTML=`
+    <h3>📊 Summary</h3>
+    <p>Time: ${Math.floor(sec/60)}m ${sec%60}s</p>
+    <p>WPM: ${Math.round(words.length/sec*60)}</p>
+    <p><b>Mispronounced:</b><br>
+    ${[...new Set(wrongWords)].map(w=>`<span class="wrong-word" onclick="openModal('${w}')">${w}</span>`).join(" ")||"None 🎉"}
+    </p>`;
+  summary.style.display="block";
 }
 
-/* MODAL */
-function openModal(word) {
-  selectedWord = word;
-  document.getElementById("modalWord").innerText = word;
-  document.getElementById("modal").style.display = "flex";
+function openModal(w){selectedWord=w;modalWord.innerText=w;modal.style.display="flex";}
+function closeModal(){modal.style.display="none";}
+function pronounceWord(){
+  const u=new SpeechSynthesisUtterance(selectedWord);
+  u.lang=languageSelect.value;
+  speechSynthesis.speak(u);
 }
 
-function closeModal() {
-  document.getElementById("modal").style.display = "none";
-}
-
-function pronounceWord() {
-  const utter = new SpeechSynthesisUtterance(selectedWord);
-  utter.lang = document.getElementById("languageSelect").value;
-  speechSynthesis.speak(utter);
-}
-
-/* RESET */
-function resetAll() {
-  if (recognition) recognition.stop();
-  recognition = null;
-  isReading = false;
-
-  words = [];
-  wrongWords = [];
-  correctCount = 0;
-  index = 0;
-  startTime = null;
-  endTime = null;
-
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
-
-  document.getElementById("text").innerHTML = "";
-  document.getElementById("inputText").value = "";
-  document.getElementById("summary").style.display = "none";
+function resetAll(){
+  recognition?.stop();
+  text.innerHTML="";inputText.value="";
+  summary.style.display="none";
+  index=0;wrongWords=[];startBtn.disabled=false;stopBtn.disabled=true;
 }
 </script>
 
 </body>
 </html>
-
